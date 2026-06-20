@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Analista</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f3f4f6; color: #1f2937; padding: 40px 20px; }
+        .container { max-width: 1100px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .header-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 2px solid #f3f4f6; padding-bottom: 16px; }
+        h2 { font-size: 24px; font-weight: 600; color: #111827; }
+        .btn-back { color: #2563eb; text-decoration: none; font-size: 14px; font-weight: 500; }
+        .btn-back:hover { text-decoration: underline; }
+        
+        table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 10px; font-size: 15px; }
+        th { background-color: #f9fafb; color: #4b5563; font-weight: 600; padding: 14px; border-bottom: 2px solid #e5e7eb; }
+        td { padding: 14px; border-bottom: 1px solid #e5e7eb; color: #374151; }
+        tr:hover { background-color: #f9fafb; }
+        
+        .pdf-link { color: #2563eb; text-decoration: none; font-weight: 500; }
+        .pdf-link:hover { text-decoration: underline; }
+        
+        .badge { padding: 4px 8px; border-radius: 50px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        .badge-Pendiente { background-color: #fef3c7; color: #d97706; }
+        .badge-Viable { background-color: #dcfce7; color: #15803d; }
+        .badge-No_viable { background-color: #fee2e2; color: #b91c1c; }
+        
+        .actions { display: flex; gap: 6px; }
+        .btn-v { background-color: #10b981; color: white; border: none; padding: 6px 12px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: 500; transition: background-color 0.1s; }
+        .btn-v:hover { background-color: #059669; }
+        .btn-n { background-color: #ef4444; color: white; border: none; padding: 6px 12px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: 500; transition: background-color 0.1s; }
+        .btn-n:hover { background-color: #dc2626; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-panel">
+            <h2>Panel de Reclutamiento</h2>
+            <a class="btn-back" href="index.html">← Volver al Formulario</a>
+        </div>
+        <table id="tabla">
+            <thead>
+                <tr><th>Nombre</th><th>Correo</th><th>Carrera</th><th>Semestre</th><th>Hoja de Vida</th><th>Estado</th><th>Acciones</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        function verificarAcceso() {
+            const usuarioCorrecto = "admin_seleccion";
+            const claveCorrecta = "Analista2026";
+
+            const usuarioIngresado = prompt("Ingrese su Usuario de Analista:");
+            const claveIngresada = prompt("Ingrese su Contraseña:");
+
+            if (usuarioIngresado === usuarioCorrecto && claveIngresada === claveCorrecta) {
+                alert("¡Acceso concedido! Bienvenido al sistema.");
+                cargarCandidatos(); 
+            } else {
+                alert("Usuario o contraseña incorrectos. Acceso denegado.");
+                window.location.href = "index.html"; 
+            }
+        }
+
+        async function cargarCandidatos() {
+            const res = await fetch('/api/practicantes');
+            const datos = await res.json();
+            const tbody = document.querySelector('#tabla tbody');
+            tbody.innerHTML = '';
+            datos.forEach(c => {
+                const tr = document.createElement('tr');
+                const claseEstado = c.estado.replace(' ', '_');
+                tr.innerHTML = `
+                    <td><b>${c.nombre}</b></td><td>${c.email}</td><td>${c.carrera}</td><td>${c.semestre}°</td>
+                    <td><a class="pdf-link" href="/uploads/${c.hv_ruta}" download>📄 Descargar PDF</a></td>
+                    <td><span class="badge badge-${claseEstado}">${c.estado}</span></td>
+                    <td class="actions">
+                        <button class="btn-v" onclick="cambiar(${c.id}, 'Viable')">Viable</button>
+                        <button class="btn-n" onclick="cambiar(${c.id}, 'No viable')">No Viable</button>
+                    </td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function cambiar(id, estado) {
+            await fetch(`/api/practicantes/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ estado })
+            });
+            cargarCandidatos();
+        }
+        window.onload = verificarAcceso;
+    </script>
+</body>
+</html>
